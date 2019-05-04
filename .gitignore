@@ -74,3 +74,11 @@ typings/
 
 # FuseBox cache
 .fusebox/
+.idea/.name
+.idea/jsLibraryMappings.xml
+.idea/misc.xml
+.idea/modules.xml
+.idea/workspace.xml
+key.js
+*.iml
+.idea/vcs.xml
