@@ -7,6 +7,7 @@ const key = require('../key.js');
 
 const request  = require('request');
 const jp = require('jsonpath');
+const pug = require('pug');
 
 let today = new Date();
 let startDate = new Date().setDate(today.getDate()-30);
@@ -96,22 +97,45 @@ router.get('/', function(req, res, next) {
             for (let player in playernames){
                 let row={};
                 row['name']=playernames[player];
+                row['total']=0;
                 for(let death in deathnames){
                     row[deathnames[death]] =0;
                 }
                 tabledata.push(row);
             }
-            console.log(tabledata);
+            for (let row in tabledata){
+                for(let player in deaths){
+                    if(tabledata[row]['name']===deaths[player]['name']){
+                        for(let death in deaths[player]['deaths']) {
+                            tabledata[row]['total']+=1;
+                            tabledata[row][deaths[player]['deaths'][death]] +=1;
+                        }
+                    }
+                }
+            }
 
-            let headers = {'name':'name'};
+            let headers = {'name':'name','total':'total'};
             for(let death in deathnames){
                 headers[deathnames[death]] = deathnames[death];
             }
+
+
             let table = new Table()
                 .setHeaders(headers) // see above json headers section
                 .setData(tabledata) // see above json data section
-                .render();
-            res.send(table);
+            for(let death in deathnames) {
+                table.setTotal(deathnames[death], function (columnCellsCollection, rowsCollection) {
+                    return Math.round(
+                        columnCellsCollection.reduce(function (prev, val) {
+                                return +prev + val;
+                            })
+                    );
+                });
+            }
+            let html = pug.compileFile('./views/index.pug');
+            console.log(html());
+            let output ='<!DOCTYPE html><html><head><link rel=\"stylesheet\" href=\"/stylesheets/style.css\"></head><body>'+table.render()+'</body></html>';
+            res.send(output);
         }).catch(function(error){
             console.log(error);
             console.trace();
