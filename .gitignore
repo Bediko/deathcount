@@ -82,3 +82,10 @@ typings/
 key.js
 *.iml
 .idea/vcs.xml
+.idea/webServers.xml
+.idea/deployment.xml
+.idea/webServers.xml
+.idea/deployment.xml
+*.xml
+.idea/deployment.xml
+.idea/webServers.xml
