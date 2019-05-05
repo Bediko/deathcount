@@ -10,7 +10,15 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "async": "^2.6.2",
+    "cookie-parser": "^1.4.4",
+    "express": "^4.16.4",
+    "http-errors": "^1.7.2",
     "jsonpath": "^1.0.1",
-    "request": "^2.88.0"
+    "morgan": "^1.9.1",
+    "path": "^0.12.7",
+    "pug": "^2.0.3",
+    "request": "^2.88.0",
+    "table-builder": "^2.1.1"
   }
 }
