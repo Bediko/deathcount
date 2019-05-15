@@ -8,6 +8,7 @@ const key = require('../key.js');
 const request  = require('request');
 const jp = require('jsonpath');
 const pug = require('pug');
+const path = require('path');
 
 let today = new Date();
 let startDate = new Date().setDate(today.getDate()-30);
@@ -81,12 +82,13 @@ router.get('/', function(req, res, next) {
                     playernames.add(player);
                     death['name'] = player;
                     death['deaths'] = jp.query(entries[entry], '$.entries[?(@.name==\'' + player + '\')].killingBlow.name');
-                    for (let key in death['deaths']){
-                        deathnames.add(death['deaths'][key]);
-                    }
                     if (death['deaths'].length === 0){
                         death['deaths'] = ['broken report'];
                     }
+                    for (let key in death['deaths']){
+                        deathnames.add(death['deaths'][key]);
+                    }
+
                     deaths.push(death);
                 }
             }
@@ -103,37 +105,53 @@ router.get('/', function(req, res, next) {
                 }
                 tabledata.push(row);
             }
+            let rowtotal={};
+            rowtotal['name']='total';
+            rowtotal['total']=0;
+            for(let death in deathnames){
+                rowtotal[deathnames[death]] =0;
+            }
+
             for (let row in tabledata){
                 for(let player in deaths){
                     if(tabledata[row]['name']===deaths[player]['name']){
                         for(let death in deaths[player]['deaths']) {
                             tabledata[row]['total']+=1;
                             tabledata[row][deaths[player]['deaths'][death]] +=1;
+                            rowtotal['total'] +=1;
+                            rowtotal[deaths[player]['deaths'][death]] += 1;
                         }
                     }
                 }
             }
 
+
+            tabledata.push(rowtotal);
+            tabledata.sort(function(a,b){return a['total']-b['total']})
+            let totaldeaths = rowtotal['total'];
+            delete rowtotal['name'];
+            delete rowtotal['total'];
+            let sorteddeaths=[];
+            for(let key in rowtotal)
+                if(rowtotal.hasOwnProperty(key))
+                    sorteddeaths.push([key, rowtotal[key]]);
+            sorteddeaths.sort(function(a, b)
+            {
+                return -(a[1]-b[1]);
+            });
+
+
+
             let headers = {'name':'name','total':'total'};
-            for(let death in deathnames){
-                headers[deathnames[death]] = deathnames[death];
+            for (let i = 0; i < sorteddeaths.length; i++) {
+                let key = sorteddeaths[i][0];
+                headers[key] = key;
             }
+            rowtotal['name']= 'total';
+            rowtotal['total']= totaldeaths;
 
 
-            let table = new Table()
-                .setHeaders(headers) // see above json headers section
-                .setData(tabledata) // see above json data section
-            for(let death in deathnames) {
-                table.setTotal(deathnames[death], function (columnCellsCollection, rowsCollection) {
-                    return Math.round(
-                        columnCellsCollection.reduce(function (prev, val) {
-                                return +prev + val;
-                            })
-                    );
-                });
-            }
-            let html = pug.compileFile('./views/index.pug');
-            console.log(html());
+            let table = new Table().setHeaders(headers).setData(tabledata);
             let output ='<!DOCTYPE html><html><head><link rel=\"stylesheet\" href=\"/stylesheets/style.css\"></head><body>'+table.render()+'</body></html>';
             res.send(output);
         }).catch(function(error){
